@@ -1,122 +1,130 @@
 import React from 'react';
 
 import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
+View,
+TextInput,
+TouchableOpacity,
+Text,
+StyleSheet
 } from 'react-native';
 
 
 
-export default function TaskForm({ task, setTask, onAdd }) {
+export default function TaskForm({
+task,
+setTask,
+onAdd
+}){
 
 
-  return (
+return(
 
-    <View style={styles.inputContainer}>
-
-
-      <TextInput
-
-        style={styles.input}
-
-        placeholder="Enter task"
-
-        value={task}
-
-        onChangeText={setTask}
-
-      />
+<View style={styles.container}>
 
 
+<TextInput
 
-      <TouchableOpacity
+style={styles.input}
 
-        style={styles.addButton}
+placeholder="Enter task"
 
-        onPress={onAdd}
+value={task}
 
-      >
+onChangeText={setTask}
 
-
-        <Text style={styles.buttonText}>
-          +
-        </Text>
-
-
-      </TouchableOpacity>
+/>
 
 
 
-    </View>
 
-  );
+
+<TouchableOpacity
+
+style={styles.button}
+
+onPress={onAdd}
+
+>
+
+
+<Text style={styles.text}>
+
++
+
+</Text>
+
+
+</TouchableOpacity>
+
+
+</View>
+
+
+);
+
 
 }
 
 
 
-const styles = StyleSheet.create({
 
 
-  inputContainer: {
-
-    flexDirection:'row',
-
-    alignItems:'center',
-
-    marginBottom:15,
-
-  },
+const styles=StyleSheet.create({
 
 
-  input: {
+container:{
 
-    flex:1,
+flexDirection:'row',
 
-    backgroundColor:'#fff',
+marginBottom:15
 
-    borderWidth:1,
-
-    borderColor:'#ddd',
-
-    borderRadius:10,
-
-    paddingHorizontal:15,
-
-    paddingVertical:12,
-
-    fontSize:16,
-
-  },
+},
 
 
-  addButton: {
 
-    backgroundColor:'#007AFF',
+input:{
 
-    marginLeft:10,
+flex:1,
 
-    paddingHorizontal:18,
+backgroundColor:'#fff',
 
-    paddingVertical:12,
+borderWidth:1,
 
-    borderRadius:10,
+borderColor:'#ddd',
 
-  },
+borderRadius:10,
+
+padding:12
+
+},
 
 
-  buttonText: {
 
-    color:'#fff',
+button:{
 
-    fontWeight:'bold',
+backgroundColor:'#007AFF',
 
-    fontSize:18,
+marginLeft:10,
 
-  },
+paddingHorizontal:20,
+
+justifyContent:'center',
+
+borderRadius:10
+
+},
+
+
+
+text:{
+
+color:'#fff',
+
+fontSize:22,
+
+fontWeight:'bold'
+
+}
 
 
 });

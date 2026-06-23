@@ -3,54 +3,83 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
-  Alert,
   FlatList,
   Keyboard,
+  TouchableOpacity,
 } from 'react-native';
+
+
+import Toast from 'react-native-toast-message';
+
+
+import { Ionicons } from '@expo/vector-icons';
+
 
 import { supabase } from '../../lib/supabase';
 
 
-type Task = {
-  id: number;
-  title: string;
-  completed: boolean;
-  created_at: string;
-};
+import TaskForm from '../components/TaskForm';
 
 
-export default function App() {
+
+
+export default function Index() {
 
 
   const [task, setTask] = useState('');
-  const [tasks, setTasks] = useState<Task[]>([]);
+
+  const [tasks, setTasks] = useState<any[]>([]);
+
+
 
 
 
   // =========================
-  // 1. LOAD TASKS
+  // READ
   // =========================
+
 
   const loadTasks = async () => {
 
 
     const { data, error } = await supabase
+
       .from('tasks')
+
       .select('*')
-      .order('created_at', { ascending: false });
+
+      .order('created_at', {
+        ascending:false
+      });
 
 
 
-    if (error) {
 
-      console.log({ error });
+    if(error){
+
+
+      console.log(error);
+
+
+
+      Toast.show({
+
+        type:'error',
+
+        text1:'Load Failed',
+
+        text2:error.message
+
+      });
+
+
 
       return;
 
     }
+
+
 
 
 
@@ -63,13 +92,17 @@ export default function App() {
 
 
 
-  // LOAD ON APP START
 
-  useEffect(() => {
+  useEffect(()=>{
+
 
     loadTasks();
 
-  }, []);
+
+  },[]);
+
+
+
 
 
 
@@ -78,30 +111,27 @@ export default function App() {
 
 
   // =========================
-  // 2. ADD TASK
+  // CREATE
   // =========================
 
 
-  const addTask = async () => {
+  const addTask = async()=>{
 
 
-    if (!task.trim()) {
-
-      return;
-
-    }
+    if(!task.trim()) return;
 
 
 
-    const { error } = await supabase
+
+    const {error}=await supabase
 
       .from('tasks')
 
       .insert({
 
-        title: task,
+        title:task,
 
-        completed: false,
+        completed:false
 
       });
 
@@ -109,16 +139,41 @@ export default function App() {
 
 
 
-    if (error) {
+    if(error){
 
 
-      console.log({ error });
+      console.log(error);
+
+
+
+      Toast.show({
+
+        type:'error',
+
+        text1:'Add Failed',
+
+        text2:error.message
+
+      });
+
 
 
       return;
 
-
     }
+
+
+
+
+
+    Toast.show({
+
+      type:'success',
+
+      text1:'Task Added'
+
+    });
+
 
 
 
@@ -131,6 +186,79 @@ export default function App() {
     loadTasks();
 
 
+  };
+
+
+
+
+
+
+
+
+
+  // =========================
+  // UPDATE
+  // =========================
+
+
+  const toggleTask = async(item:any)=>{
+
+
+
+    const {error}=await supabase
+
+      .from('tasks')
+
+      .update({
+
+        completed:!item.completed
+
+      })
+
+      .eq('id',item.id);
+
+
+
+
+
+    if(error){
+
+
+
+      Toast.show({
+
+        type:'error',
+
+        text1:'Update Failed',
+
+        text2:error.message
+
+      });
+
+
+
+      return;
+
+
+    }
+
+
+
+
+
+    Toast.show({
+
+      type:'success',
+
+      text1:'Task Updated'
+
+    });
+
+
+
+
+    loadTasks();
+
 
   };
 
@@ -143,40 +271,59 @@ export default function App() {
 
 
   // =========================
-  // 3. TOGGLE TASK
+  // DELETE
   // =========================
 
 
-  const toggleTask = async (item: Task) => {
+  const deleteTask = async(id:number)=>{
 
 
 
-    const { error } = await supabase
+    const {error}=await supabase
 
       .from('tasks')
 
-      .update({
+      .delete()
 
-        completed: !item.completed,
-
-      })
-
-      .eq('id', item.id);
+      .eq('id',id);
 
 
 
 
 
-    if (error) {
+
+    if(error){
 
 
-      console.log({ error });
+
+      Toast.show({
+
+        type:'error',
+
+        text1:'Delete Failed',
+
+        text2:error.message
+
+      });
+
 
 
       return;
 
 
     }
+
+
+
+
+
+    Toast.show({
+
+      type:'success',
+
+      text1:'Task Deleted'
+
+    });
 
 
 
@@ -195,96 +342,7 @@ export default function App() {
 
 
 
-  // =========================
-  // 4. DELETE TASK
-  // =========================
-
-
-  const deleteTask = (id:number)=>{
-
-
-    Alert.alert(
-
-      "Delete Task",
-
-      "Are you sure you want to delete this task?",
-
-
-      [
-
-        {
-
-          text:"Cancel",
-
-          style:"cancel"
-
-
-        },
-
-
-        {
-
-          text:"Delete",
-
-
-          onPress: async()=>{
-
-
-            const { error } = await supabase
-
-              .from('tasks')
-
-              .delete()
-
-              .eq('id', id);
-
-
-
-
-
-            if(error){
-
-
-              console.log({error});
-
-
-              return;
-
-
-            }
-
-
-
-
-            loadTasks();
-
-
-
-          }
-
-
-        }
-
-
-
-      ]
-
-
-    );
-
-
-
-  };
-
-
-
-
-
-
-
-
-
-  return (
+  return(
 
 
     <View style={styles.container}>
@@ -292,7 +350,7 @@ export default function App() {
 
       <Text style={styles.title}>
 
-        TaskFlow
+        TaskFlow CRUD
 
       </Text>
 
@@ -300,73 +358,21 @@ export default function App() {
 
 
 
-      {/* INPUT AREA */}
+      <TaskForm
 
 
-      <View style={styles.inputContainer}>
+        task={task}
+
+        setTask={setTask}
+
+        onAdd={addTask}
 
 
-        <TextInput
-
-
-          style={styles.input}
-
-
-          placeholder="Enter task"
-
-
-          value={task}
-
-
-          onChangeText={setTask}
-
-
-
-        />
+      />
 
 
 
 
-
-        <TouchableOpacity
-
-
-          style={styles.addButton}
-
-
-          onPress={addTask}
-
-
-
-        >
-
-
-
-          <Text style={styles.buttonText}>
-
-            +
-
-          </Text>
-
-
-
-        </TouchableOpacity>
-
-
-
-
-      </View>
-
-
-
-
-
-
-
-
-
-
-      {/* TASK LIST */}
 
 
 
@@ -381,28 +387,22 @@ export default function App() {
 
 
 
+
         renderItem={({item})=>(
 
 
 
-          <TouchableOpacity
+          <View style={styles.taskRow}>
 
 
+            <TouchableOpacity
 
-            onPress={()=>toggleTask(item)}
+              style={{flex:1}}
 
+              onPress={()=>toggleTask(item)}
 
+            >
 
-            onLongPress={()=>deleteTask(item.id)}
-
-
-
-          >
-
-
-
-
-            <View style={styles.taskRow}>
 
 
               <Text
@@ -412,16 +412,13 @@ export default function App() {
 
                   styles.taskText,
 
-
                   item.completed && styles.completed
-
 
                 ]}
 
 
 
               >
-
 
 
                 {item.title}
@@ -431,14 +428,36 @@ export default function App() {
               </Text>
 
 
+            </TouchableOpacity>
 
 
-            </View>
 
 
 
-          </TouchableOpacity>
 
+            <Ionicons
+
+
+              name="trash-outline"
+
+
+              size={28}
+
+
+              color="red"
+
+
+              onPress={()=>deleteTask(item.id)}
+
+
+
+            />
+
+
+
+
+
+          </View>
 
 
         )}
@@ -451,12 +470,14 @@ export default function App() {
 
 
 
+      <Toast />
+
+
     </View>
 
 
 
   );
-
 
 
 }
@@ -469,206 +490,88 @@ export default function App() {
 
 
 
+
 const styles = StyleSheet.create({
 
 
-  container:{
 
+container:{
 
-    flex:1,
 
-    padding:20,
+flex:1,
 
-    marginTop:50,
+padding:20,
 
-    backgroundColor:'#F5F5F5',
+marginTop:50,
 
+backgroundColor:'#F5F5F5'
 
-  },
 
+},
 
 
 
 
-  title:{
 
+title:{
 
-    fontSize:32,
 
-    fontWeight:'bold',
+fontSize:32,
 
-    marginBottom:20,
+fontWeight:'bold',
 
+marginBottom:20
 
-  },
 
+},
 
 
 
 
 
+taskRow:{
 
-  inputContainer:{
 
+backgroundColor:'#fff',
 
-    flexDirection:'row',
+padding:15,
 
-    alignItems:'center',
+borderRadius:10,
 
-    marginBottom:15,
+marginBottom:10,
 
+flexDirection:'row',
 
-  },
+alignItems:'center'
 
 
+},
 
 
 
 
-  input:{
 
+taskText:{
 
-    flex:1,
 
+fontSize:16,
 
-    backgroundColor:'#fff',
 
+},
 
-    borderWidth:1,
 
 
-    borderColor:'#ddd',
 
 
-    borderRadius:10,
+completed:{
 
 
-    paddingHorizontal:15,
+textDecorationLine:'line-through',
 
+color:'gray'
 
-    paddingVertical:12,
 
-
-    fontSize:16,
-
-
-
-  },
-
-
-
-
-
-
-
-  addButton:{
-
-
-    backgroundColor:'#007AFF',
-
-
-    marginLeft:10,
-
-
-    paddingHorizontal:18,
-
-
-    paddingVertical:12,
-
-
-    borderRadius:10,
-
-
-
-  },
-
-
-
-
-
-
-
-
-
-  taskRow:{
-
-
-    backgroundColor:'#fff',
-
-
-    padding:15,
-
-
-    borderRadius:10,
-
-
-    marginBottom:10,
-
-
-    borderWidth:1,
-
-
-    borderColor:'#eee',
-
-
-
-  },
-
-
-
-
-
-
-
-
-  taskText:{
-
-
-    fontSize:16,
-
-
-
-  },
-
-
-
-
-
-
-
-  completed:{
-
-
-    textDecorationLine:'line-through',
-
-
-    color:'gray',
-
-
-
-  },
-
-
-
-
-
-
-
-
-  buttonText:{
-
-
-    color:'#fff',
-
-
-    fontWeight:'bold',
-
-
-    fontSize:18,
-
-
-
-  },
+}
 
 
 
