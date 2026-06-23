@@ -1,98 +1,675 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  FlatList,
+  Keyboard,
+} from 'react-native';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+import { supabase } from '../../lib/supabase';
+
+
+type Task = {
+  id: number;
+  title: string;
+  completed: boolean;
+  created_at: string;
+};
+
+
+export default function App() {
+
+
+  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+
+
+  // =========================
+  // 1. LOAD TASKS
+  // =========================
+
+  const loadTasks = async () => {
+
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+
+
+    if (error) {
+
+      console.log({ error });
+
+      return;
+
+    }
+
+
+
+    setTasks(data || []);
+
+
+  };
+
+
+
+
+
+  // LOAD ON APP START
+
+  useEffect(() => {
+
+    loadTasks();
+
+  }, []);
+
+
+
+
+
+
+
+  // =========================
+  // 2. ADD TASK
+  // =========================
+
+
+  const addTask = async () => {
+
+
+    if (!task.trim()) {
+
+      return;
+
+    }
+
+
+
+    const { error } = await supabase
+
+      .from('tasks')
+
+      .insert({
+
+        title: task,
+
+        completed: false,
+
+      });
+
+
+
+
+
+    if (error) {
+
+
+      console.log({ error });
+
+
+      return;
+
+
+    }
+
+
+
+
+    setTask('');
+
+    Keyboard.dismiss();
+
+
+    loadTasks();
+
+
+
+  };
+
+
+
+
+
+
+
+
+
+  // =========================
+  // 3. TOGGLE TASK
+  // =========================
+
+
+  const toggleTask = async (item: Task) => {
+
+
+
+    const { error } = await supabase
+
+      .from('tasks')
+
+      .update({
+
+        completed: !item.completed,
+
+      })
+
+      .eq('id', item.id);
+
+
+
+
+
+    if (error) {
+
+
+      console.log({ error });
+
+
+      return;
+
+
+    }
+
+
+
+
+    loadTasks();
+
+
+
+  };
+
+
+
+
+
+
+
+
+
+  // =========================
+  // 4. DELETE TASK
+  // =========================
+
+
+  const deleteTask = (id:number)=>{
+
+
+    Alert.alert(
+
+      "Delete Task",
+
+      "Are you sure you want to delete this task?",
+
+
+      [
+
+        {
+
+          text:"Cancel",
+
+          style:"cancel"
+
+
+        },
+
+
+        {
+
+          text:"Delete",
+
+
+          onPress: async()=>{
+
+
+            const { error } = await supabase
+
+              .from('tasks')
+
+              .delete()
+
+              .eq('id', id);
+
+
+
+
+
+            if(error){
+
+
+              console.log({error});
+
+
+              return;
+
+
+            }
+
+
+
+
+            loadTasks();
+
+
+
+          }
+
+
+        }
+
+
+
+      ]
+
+
     );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+
+
+  };
+
+
+
+
+
+
+
+
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+
+
+    <View style={styles.container}>
+
+
+      <Text style={styles.title}>
+
+        TaskFlow
+
+      </Text>
+
+
+
+
+
+      {/* INPUT AREA */}
+
+
+      <View style={styles.inputContainer}>
+
+
+        <TextInput
+
+
+          style={styles.input}
+
+
+          placeholder="Enter task"
+
+
+          value={task}
+
+
+          onChangeText={setTask}
+
+
+
+        />
+
+
+
+
+
+        <TouchableOpacity
+
+
+          style={styles.addButton}
+
+
+          onPress={addTask}
+
+
+
+        >
+
+
+
+          <Text style={styles.buttonText}>
+
+            +
+
+          </Text>
+
+
+
+        </TouchableOpacity>
+
+
+
+
+      </View>
+
+
+
+
+
+
+
+
+
+
+      {/* TASK LIST */}
+
+
+
+      <FlatList
+
+
+        data={tasks}
+
+
+
+        keyExtractor={(item)=>item.id.toString()}
+
+
+
+        renderItem={({item})=>(
+
+
+
+          <TouchableOpacity
+
+
+
+            onPress={()=>toggleTask(item)}
+
+
+
+            onLongPress={()=>deleteTask(item.id)}
+
+
+
+          >
+
+
+
+
+            <View style={styles.taskRow}>
+
+
+              <Text
+
+
+                style={[
+
+                  styles.taskText,
+
+
+                  item.completed && styles.completed
+
+
+                ]}
+
+
+
+              >
+
+
+
+                {item.title}
+
+
+
+              </Text>
+
+
+
+
+            </View>
+
+
+
+          </TouchableOpacity>
+
+
+
+        )}
+
+
+
+      />
+
+
+
+
+
+    </View>
+
+
+
   );
+
+
+
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
+
+
+
+
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+
+
+  container:{
+
+
+    flex:1,
+
+    padding:20,
+
+    marginTop:50,
+
+    backgroundColor:'#F5F5F5',
+
+
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+
+
+
+
+
+  title:{
+
+
+    fontSize:32,
+
+    fontWeight:'bold',
+
+    marginBottom:20,
+
+
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+
+
+
+
+
+
+
+  inputContainer:{
+
+
+    flexDirection:'row',
+
+    alignItems:'center',
+
+    marginBottom:15,
+
+
   },
-  title: {
-    textAlign: 'center',
+
+
+
+
+
+
+  input:{
+
+
+    flex:1,
+
+
+    backgroundColor:'#fff',
+
+
+    borderWidth:1,
+
+
+    borderColor:'#ddd',
+
+
+    borderRadius:10,
+
+
+    paddingHorizontal:15,
+
+
+    paddingVertical:12,
+
+
+    fontSize:16,
+
+
+
   },
-  code: {
-    textTransform: 'uppercase',
+
+
+
+
+
+
+
+  addButton:{
+
+
+    backgroundColor:'#007AFF',
+
+
+    marginLeft:10,
+
+
+    paddingHorizontal:18,
+
+
+    paddingVertical:12,
+
+
+    borderRadius:10,
+
+
+
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+
+
+
+
+
+
+
+
+  taskRow:{
+
+
+    backgroundColor:'#fff',
+
+
+    padding:15,
+
+
+    borderRadius:10,
+
+
+    marginBottom:10,
+
+
+    borderWidth:1,
+
+
+    borderColor:'#eee',
+
+
+
   },
+
+
+
+
+
+
+
+
+  taskText:{
+
+
+    fontSize:16,
+
+
+
+  },
+
+
+
+
+
+
+
+  completed:{
+
+
+    textDecorationLine:'line-through',
+
+
+    color:'gray',
+
+
+
+  },
+
+
+
+
+
+
+
+
+  buttonText:{
+
+
+    color:'#fff',
+
+
+    fontWeight:'bold',
+
+
+    fontSize:18,
+
+
+
+  },
+
+
+
 });
